@@ -1,0 +1,279 @@
+diff --git a/pom.xml b/pom.xml
+index 114bc82..50142d4 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -1,26 +1,29 @@
++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+ <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+     <modelVersion>4.0.0</modelVersion>
+ 
+     <parent>
+-        <groupId>org.jenkins-ci.plugins</groupId>
+-        <artifactId>plugin</artifactId>
+-        <version>1.427</version>
+-    </parent>
++        <groupId>org.eclipse.hudson.plugins</groupId>
++        <artifactId>hudson-plugin-parent</artifactId>
++        <version>3.0.0</version>
++    <relativePath/>
++  </parent>
+ 
+-    <artifactId>jobConfigHistory</artifactId>
++    <groupId>org.hudsonci.plugins</groupId>
++  <artifactId>jobConfigHistory</artifactId>
+     <packaging>hpi</packaging>
+-    <version>2.4</version>
+-    <name>Jenkins Job Configuration History Plugin</name>
++    <version>2.4-h-1-SNAPSHOT</version>
++    <name>Hudson Job Configuration History Plugin</name>
+     <description>Saves copies of job and system configurations.</description>
+-    <url>http://wiki.jenkins-ci.org/display/JENKINS/JobConfigHistory+Plugin</url>
++    <url>http://wiki.hudson-ci.org/display/HUDSON/JobConfigHistory+Plugin</url>
+     <issueManagement>
+         <system>JIRA</system>
+         <url>http://issues.jenkins-ci.org/secure/IssueNavigator.jspa?reset=true&amp;jqlQuery=project+%3D+JENKINS+AND+status+in+%28Open%2C+%22In+Progress%22%2C+Reopened%29+AND+component+%3D+%27jobConfigHistory%27</url>
+     </issueManagement>
+     <scm>
+-        <connection>scm:git:git://github.com/jenkinsci/jobConfigHistory-plugin.git</connection>
+-        <developerConnection>scm:git:git@github.com:jenkinsci/jobConfigHistory-plugin.git</developerConnection>
+-        <url>https://github.com/jenkinsci/jobConfigHistory-plugin</url>
++        <connection>scm:git:git://github.com/hudson3-plugins/jobConfigHistory-plugin.git</connection>
++        <developerConnection>scm:git:git@github.com:hudson3-plugins/jobConfigHistory-plugin.git</developerConnection>
++        <url>https://github.com/hudson3-plugins/jobConfigHistory-plugin</url>
+     </scm>
+     <ciManagement>
+         <system>Jenkins</system>
+@@ -62,12 +65,7 @@
+     </developers>
+ 
+     <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
+-    <repositories>
+-      <repository>
+-         <id>repo.jenkins-ci.org</id>
+-        <url>http://repo.jenkins-ci.org/public/</url>
+-      </repository>
+-    </repositories>
++    
+ 
+     <pluginRepositories>
+       <pluginRepository>
+@@ -79,7 +77,8 @@
+     <properties>
+         <!-- compare: http://docs.codehaus.org/display/MAVENUSER/POM+Element+for+Source+File+Encoding -->
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+-    </properties>
++    <hudsonTags>ui</hudsonTags>
++  </properties>
+     <dependencies>
+         <dependency>
+             <groupId>commons-lang</groupId>
+@@ -106,9 +105,9 @@
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+-            <groupId>org.jenkins-ci</groupId>
++            <groupId>org.hudsonci.tools</groupId>
+             <artifactId>htmlunit</artifactId>
+-            <version>2.6-jenkins-6</version>
++            <version>2.6-hudson-3</version>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+@@ -134,15 +133,15 @@
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+-            <groupId>org.kohsuke.stapler</groupId>
+-            <artifactId>stapler</artifactId>
+-            <version>1.172</version>
++            <groupId>org.eclipse.hudson.stapler</groupId>
++            <artifactId>stapler-core</artifactId>
++            <version>3.0.0</version>
+             <scope>provided</scope>
+         </dependency>
+             <dependency>
+             <groupId>org.kohsuke.stapler</groupId>
+             <artifactId>json-lib</artifactId>
+-            <version>2.1-rev7</version>
++            <version>2.1-rev6</version>
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+@@ -152,8 +151,11 @@
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+-        	<groupId>org.jenkins-ci.main</groupId>
+-        	<artifactId>maven-plugin</artifactId></dependency></dependencies>
++        	<groupId>org.hudsonci.plugins</groupId>
++        	<artifactId>maven-plugin</artifactId>
++      <version>2.2.1</version>
++    </dependency>
++  </dependencies>
+     <build>
+         <plugins>
+             <plugin>
+diff --git a/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistory.java b/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistory.java
+index 920eca3..9d0cf6f 100644
+--- a/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistory.java
++++ b/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistory.java
+@@ -22,7 +22,7 @@ import java.util.regex.PatternSyntaxException;
+ 
+ import javax.servlet.ServletException;
+ 
+-import jenkins.model.Jenkins;
++import hudson.model.Hudson;
+ 
+ import net.sf.json.JSONObject;
+ 
+@@ -249,7 +249,7 @@ public class JobConfigHistory extends Plugin {
+             return true;
+         } else if ("userWithConfigPermission".equals(showBuildBadges) && project.hasPermission(AbstractProject.CONFIGURE)) {
+             return true;
+-        } else if ("adminUser".equals(showBuildBadges) && Hudson.getInstance().hasPermission(Jenkins.ADMINISTER)) {
++        } else if ("adminUser".equals(showBuildBadges) && Hudson.getInstance().hasPermission(Hudson.ADMINISTER)) {
+             return true;
+         }
+         return false;
+diff --git a/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistoryProjectAction.java b/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistoryProjectAction.java
+index 6bf9893..2676ed5 100644
+--- a/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistoryProjectAction.java
++++ b/src/main/java/hudson/plugins/jobConfigHistory/JobConfigHistoryProjectAction.java
+@@ -3,6 +3,7 @@ package hudson.plugins.jobConfigHistory;
+ import hudson.XmlFile;
+ import hudson.maven.MavenModule;
+ import hudson.model.AbstractItem;
++import hudson.model.AbstractItemHelper;
+ import hudson.model.AbstractProject;
+ import hudson.plugins.jobConfigHistory.JobConfigHistoryBaseAction.SideBySideView.Line;
+ import hudson.security.AccessControlled;
+@@ -216,7 +217,7 @@ public class JobConfigHistoryProjectAction extends JobConfigHistoryBaseAction {
+         final XmlFile xmlFile = getOldConfigXml(timestamp);
+         final InputStream is = new ByteArrayInputStream(xmlFile.asString().getBytes("UTF-8"));
+ 
+-        project.updateByXml(new StreamSource(is));
++        AbstractItemHelper.updateByXml(project, new StreamSource(is));
+         project.save();
+         rsp.sendRedirect(getHudson().getRootUrl() + project.getUrl());
+     }
+diff --git a/src/main/webapp/help/help-excludePattern.html b/src/main/webapp/help/help-excludePattern.html
+index 44677a2..c185028 100644
+--- a/src/main/webapp/help/help-excludePattern.html
++++ b/src/main/webapp/help/help-excludePattern.html
+@@ -1,3 +1,3 @@
+ Enter a regular expression for 'uninteresting' patterns to exclude. 
+ The default "queue|nodeMonitors|UpdateCenter|global-build-stats" matches files that are used internally, frequently updated 
+-by Jenkins and have little value to maintain history for.
++by Hudson and have little value to maintain history for.
+diff --git a/src/main/webapp/help/help-excludePattern_ja.html b/src/main/webapp/help/help-excludePattern_ja.html
+index e8218f1..2f1cdbf 100644
+--- a/src/main/webapp/help/help-excludePattern_ja.html
++++ b/src/main/webapp/help/help-excludePattern_ja.html
+@@ -1,2 +1,2 @@
+ '保存したくない'設定ファイルにマッチする正規表現を入力してください。<br />
+-デフォルト値の"queue|nodeMonitors|UpdateCenter|global-build-stats"は、Jenkinsが内部的に使用する更新頻度が高いファイルにマッチします。これらは履歴を保存する価値が低いファイルです。
++デフォルト値の"queue|nodeMonitors|UpdateCenter|global-build-stats"は、Hudsonが内部的に使用する更新頻度が高いファイルにマッチします。これらは履歴を保存する価値が低いファイルです。
+diff --git a/src/main/webapp/help/help-excludePattern_zh_TW.html b/src/main/webapp/help/help-excludePattern_zh_TW.html
+index 4872f0e..4c65a35 100644
+--- a/src/main/webapp/help/help-excludePattern_zh_TW.html
++++ b/src/main/webapp/help/help-excludePattern_zh_TW.html
+@@ -1,3 +1,3 @@
+ 輸入正規表示式，排除掉<strong>不感興趣</strong>的檔案。 
+-預設值 "queue|nodeMonitors|UpdateCenter|global-build-stats" 指出那些只供 Jenkins
++預設值 "queue|nodeMonitors|UpdateCenter|global-build-stats" 指出那些只供 Hudson
+ 內部使用、異動頻繁，又沒有什麼保存價值的檔案。
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigBadgeActionTest.java b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigBadgeActionTest.java
+index a76bee9..f44d848 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigBadgeActionTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigBadgeActionTest.java
+@@ -1,6 +1,6 @@
+ package hudson.plugins.jobConfigHistory;
+ 
+-import org.acegisecurity.context.SecurityContextHolder;
++import org.springframework.security.context.SecurityContextHolder;
+ import org.jvnet.hudson.test.recipes.LocalData;
+ import org.jvnet.hudson.test.recipes.PresetData;
+ import org.jvnet.hudson.test.recipes.PresetData.DataSet;
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryBaseActionTest.java b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryBaseActionTest.java
+index 99cc24d..66e6986 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryBaseActionTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryBaseActionTest.java
+@@ -137,7 +137,7 @@ public class JobConfigHistoryBaseActionTest extends AbstractHudsonTestCaseDeleti
+         assertThat(withoutSecurity.asXml(), containsString(JobConfigHistoryConsts.ICONFILENAME));
+         withoutSecurity.getAnchorByHref("/" + JobConfigHistoryConsts.URLNAME);
+         // with security enabled the jobConfigHistory-badge should not show anymore.
+-        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(false, false, null));
++        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(false, false, null, false));
+         hudson.setAuthorizationStrategy(new LegacyAuthorizationStrategy());
+         final HtmlPage withSecurityEnabled = webClient.goTo("/");
+         assertThat(withSecurityEnabled.asXml(), not(containsString(JobConfigHistoryConsts.ICONFILENAME)));
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryJobListenerTest.java b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryJobListenerTest.java
+index 8d5fdb7..1a9d1f3 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryJobListenerTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryJobListenerTest.java
+@@ -35,7 +35,7 @@ public class JobConfigHistoryJobListenerTest extends AbstractHudsonTestCaseDelet
+         super.setUp();
+         rootDir = hudson.getPlugin(JobConfigHistory.class).getConfiguredHistoryRootDir();
+         jobHistoryDir = new File(rootDir, JobConfigHistoryConsts.JOBS_HISTORY_DIR);
+-        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(true, false, null));
++        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(true, false, null, false));
+         webClient = new WebClient();
+     }
+ 
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryRootActionTest.java b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryRootActionTest.java
+index 737ff9b..133ee54 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryRootActionTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryRootActionTest.java
+@@ -100,7 +100,7 @@ public class JobConfigHistoryRootActionTest extends AbstractHudsonTestCaseDeleti
+      * System config history should only be visible with the right permissions.
+      */
+     public void testFilterWithoutPermissions() {
+-        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(false, false, null));
++        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(false, false, null, false));
+         hudson.setAuthorizationStrategy(new LegacyAuthorizationStrategy());
+         try {
+             final HtmlPage htmlPage = webClient.goTo(JobConfigHistoryConsts.URLNAME);
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryTest.java b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryTest.java
+index 05f4264..4ac54ee 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/JobConfigHistoryTest.java
+@@ -38,7 +38,7 @@ public class JobConfigHistoryTest extends AbstractHudsonTestCaseDeletingInstance
+     @Override
+     protected void setUp() throws Exception {
+         super.setUp();
+-        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(true, false, null));
++        hudson.setSecurityRealm(new HudsonPrivateSecurityRealm(true, false, null, false));
+         webClient = new WebClient();
+     }
+ 
+diff --git a/src/test/java/hudson/plugins/jobConfigHistory/PluginTest.java b/src/test/java/hudson/plugins/jobConfigHistory/PluginTest.java
+index be77ec5..4b0f902 100644
+--- a/src/test/java/hudson/plugins/jobConfigHistory/PluginTest.java
++++ b/src/test/java/hudson/plugins/jobConfigHistory/PluginTest.java
+@@ -73,7 +73,7 @@ public class PluginTest extends AbstractHudsonTestCaseDeletingInstanceDir {
+ 
+         public BasicHistoryPage(HtmlPage historyPage) throws IOException, SAXException {
+             this.historyPage = historyPage;
+-            assertThat(historyPage.getTitleText(), containsString("Configuration History [Jenkins]"));
++            assertThat(historyPage.getTitleText(), containsString("Configuration History [Hudson]"));
+         }
+ 
+         public List<HtmlAnchor> getConfigOutputLinks(final String type) {
+@@ -88,7 +88,7 @@ public class PluginTest extends AbstractHudsonTestCaseDeletingInstanceDir {
+ 
+         public AllJobConfigHistoryPage(HtmlPage historyPage) throws IOException, SAXException {
+             super(historyPage);
+-            assertEquals("All Configuration History [Jenkins]", historyPage.getTitleText());
++            assertEquals("All Configuration History [Hudson]", historyPage.getTitleText());
+         }
+ 
+     }
+@@ -97,7 +97,7 @@ public class PluginTest extends AbstractHudsonTestCaseDeletingInstanceDir {
+ 
+         public HistoryPage() throws IOException, SAXException {
+             super(webClient.goTo("job/" + JOB_NAME + "/jobConfigHistory"));
+-            assertEquals("Job Configuration History [Jenkins]", historyPage.getTitleText());
++            assertEquals("Job Configuration History [Hudson]", historyPage.getTitleText());
+         }
+ 
+         public HtmlPage getDiffPage() throws IOException {
